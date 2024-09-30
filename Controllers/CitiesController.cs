@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using MySql.Data.MySqlClient;
 using WorldAPI.Services;
-using WorldAPI.Models; // שימוש במודל City
+using WorldAPI.Models; // Usage of City model
 using System.Collections.Generic;
 
 namespace WorldAPI.Controllers
@@ -12,6 +12,7 @@ namespace WorldAPI.Controllers
     {
         private readonly DatabaseService _databaseService;
 
+        // Constructor: Inject the DatabaseService into the controller
         public CitiesController(DatabaseService databaseService)
         {
             _databaseService = databaseService;
@@ -44,7 +45,7 @@ namespace WorldAPI.Controllers
                 reader.Close();
             }
 
-            return Ok(cities);
+            return Ok(cities); // Returns the list of cities
         }
 
         // GET: api/Cities/LargeCities
@@ -56,8 +57,7 @@ namespace WorldAPI.Controllers
             using (MySqlConnection connection = _databaseService.GetConnection())
             {
                 connection.Open();
-                // שאילתה שמחזירה את הערים עם אוכלוסייה מעל 2,000,000
-                string query = "SELECT Id, Name, Population FROM city WHERE Population > 20000000";
+                string query = "SELECT Id, Name, Population FROM city WHERE Population > 2000000";
                 MySqlCommand command = new MySqlCommand(query, connection);
                 MySqlDataReader reader = command.ExecuteReader();
 
@@ -75,21 +75,21 @@ namespace WorldAPI.Controllers
                 reader.Close();
             }
 
-            return Ok(largeCities);
+            return Ok(largeCities); // Returns cities with population over 2 million
         }
+
+        // GET: api/Cities/GetCitiesAbovePopulation/{minPopulation}
         [HttpGet("GetCitiesAbovePopulation/{minPopulation}")]
         public IActionResult GetCitiesAbovePopulation(int minPopulation)
         {
-            List<City> largeCities = new List<City>(); // רשימה שתכיל את הערים
+            List<City> cities = new List<City>();
 
             using (MySqlConnection connection = _databaseService.GetConnection())
             {
                 connection.Open();
-
-                // שאילתה שמחזירה ערים עם אוכלוסייה מעל המספר המינימלי
                 string query = "SELECT Id, Name, Population FROM city WHERE Population > @minPopulation";
                 MySqlCommand command = new MySqlCommand(query, connection);
-                command.Parameters.AddWithValue("@minPopulation", minPopulation); // שימוש בפרמטר
+                command.Parameters.AddWithValue("@minPopulation", minPopulation);
 
                 MySqlDataReader reader = command.ExecuteReader();
 
@@ -101,47 +101,44 @@ namespace WorldAPI.Controllers
                         Name = reader.GetString(1),
                         Population = reader.GetInt32(2)
                     };
-                    largeCities.Add(city); // הוספת העיר לרשימה
+                    cities.Add(city);
                 }
 
                 reader.Close();
             }
 
-            return Ok(largeCities); // החזרת התוצאות בפורמט JSON
+            return Ok(cities); // Returns cities with population above minPopulation
         }
 
-        //[HttpPost("AddCity")]
-        //public IActionResult AddCity([FromBody] City newCity)  
-        //{
-        //    using (MySqlConnection connection = _databaseService.GetConnection())
-        //    {
-        //        connection.Open();
+        // POST: api/Cities/AddCity
+        [HttpPost("AddCity")]
+        public IActionResult AddCity([FromBody] City newCity)
+        {
+            using (MySqlConnection connection = _databaseService.GetConnection())
+            {
+                connection.Open();
 
-        //        // שאילתת SQL להוספת עיר חדשה עם כל העמודות
-        //        string query = "INSERT INTO city (Name, CountryCode, District, Population) VALUES (@Name, @CountryCode, @District, @Population)";
-        //        MySqlCommand command = new MySqlCommand(query, connection);
+                string query = "INSERT INTO city (Name, CountryCode, District, Population) VALUES (@Name, @CountryCode, @District, @Population)";
+                MySqlCommand command = new MySqlCommand(query, connection);
 
-        //        // העברת פרמטרים לשאילתה
-        //        command.Parameters.AddWithValue("@Name", newCity.Name);
-        //        command.Parameters.AddWithValue("@CountryCode", newCity.Id);
-        //        command.Parameters.AddWithValue("@District", newCity.District);
-        //        command.Parameters.AddWithValue("@Population", newCity.Population);
+                // Adding parameters to the SQL query
+                command.Parameters.AddWithValue("@Name", newCity.Name);
+                command.Parameters.AddWithValue("@CountryCode", newCity.CountryCode);
+                command.Parameters.AddWithValue("@District", newCity.District);
+                command.Parameters.AddWithValue("@Population", newCity.Population);
 
-        //        // ביצוע השאילתה
-        //        var result = command.ExecuteNonQuery();
+                // Execute query and check if city was added
+                var result = command.ExecuteNonQuery();
 
-        //        // בדיקת הצלחה והחזרת תשובה
-        //        if (result > 0)
-        //        {
-        //            return Ok(newCity); // החזרת העיר החדשה שנוספה
-        //        }
-        //        else
-        //        {
-        //            return BadRequest("Failed to add the city.");
-        //        }
-        //    }
-        //}
-
-
+                if (result > 0)
+                {
+                    return Ok(newCity); // City successfully added
+                }
+                else
+                {
+                    return BadRequest("Failed to add the city.");
+                }
+            }
+        }
     }
 }
