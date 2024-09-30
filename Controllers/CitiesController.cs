@@ -51,13 +51,11 @@ namespace WorldAPI.Controllers
         [HttpGet("LargeCities")]
         public IActionResult GetLargeCities()
         {
-            List<City> largeCities = new List<City>();
 
             using (MySqlConnection connection = _databaseService.GetConnection())
             {
                 connection.Open();
                 // שאילתה שמחזירה את הערים עם אוכלוסייה מעל 2,000,000
-                string query = "SELECT Id, Name, Population FROM city WHERE Population > 20000000";
                 MySqlCommand command = new MySqlCommand(query, connection);
                 MySqlDataReader reader = command.ExecuteReader();
 
@@ -80,7 +78,6 @@ namespace WorldAPI.Controllers
         [HttpGet("GetCitiesAbovePopulation/{minPopulation}")]
         public IActionResult GetCitiesAbovePopulation(int minPopulation)
         {
-            List<City> largeCities = new List<City>(); // רשימה שתכיל את הערים
 
             using (MySqlConnection connection = _databaseService.GetConnection())
             {
@@ -95,7 +92,6 @@ namespace WorldAPI.Controllers
 
                 while (reader.Read())
                 {
-                    City city = new City
                     {
                         Id = reader.GetInt32(0),
                         Name = reader.GetString(1),
